@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>机房3D可视化实例项目甘特图（10月9日–12月11日）</title>
+<style>
+:root {
+    --bg: #f5f7fa; --card: #ffffff; --text: #333333; --text-2: #666666; --text-3: #999999;
+    --border: #e8ecf1; --grid-week: #eceff3; --grid-month: #c9d1dc; --weekend: #f3f4f6;
+    --hover: #f8fafc; --hover-tl: #eef3fb; --phase-row: #f0f3f8; --navy: #1a2b4c;
+    --today: #e34948;
+    --c0: #2a78d6; --c1: #eb6834; --c2: #1baf7a; --c3: #eda100; --c4: #e87ba4;
+    --note-bg: #fffbe6; --note-border: #faad14; --note-text: #666666; --note-strong: #d48806;
+}
+@media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+        --bg: #121211; --card: #1a1a19; --text: #e8e7dc; --text-2: #c3c2b7; --text-3: #8a897d;
+        --border: #2e2e2b; --grid-week: #2a2a28; --grid-month: #454540; --weekend: #232322;
+        --hover: #20201e; --hover-tl: #22222a; --phase-row: #20201e; --navy: #24365e;
+        --today: #e66767;
+        --c0: #3987e5; --c1: #d95926; --c2: #199e70; --c3: #c98500; --c4: #d55181;
+        --note-bg: #2a2517; --note-border: #faad14; --note-text: #c3c2b7; --note-strong: #faad14;
+    }
+}
+:root[data-theme="dark"] {
+    --bg: #121211; --card: #1a1a19; --text: #e8e7dc; --text-2: #c3c2b7; --text-3: #8a897d;
+    --border: #2e2e2b; --grid-week: #2a2a28; --grid-month: #454540; --weekend: #232322;
+    --hover: #20201e; --hover-tl: #22222a; --phase-row: #20201e; --navy: #24365e;
+    --today: #e66767;
+    --c0: #3987e5; --c1: #d95926; --c2: #199e70; --c3: #c98500; --c4: #d55181;
+    --note-bg: #2a2517; --note-border: #faad14; --note-text: #c3c2b7; --note-strong: #faad14;
+}
+body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; margin: 30px; background: var(--bg); color: var(--text); }
+h1 { text-align: center; color: var(--navy); margin-bottom: 5px; font-size: 24px; }
+@media (prefers-color-scheme: dark) { h1 { color: #e8e7dc; } :root[data-theme="dark"] h1 { color: #e8e7dc; } :root[data-theme="light"] h1 { color: #1a2b4c; } }
+.subtitle { text-align: center; color: var(--text-2); margin-bottom: 20px; font-size: 14px; }
+.gantt-wrapper { background: var(--card); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 20px; overflow-x: auto; }
+.toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.toolbar label { font-size: 13px; color: var(--text-2); }
+.toolbar select { font-family: inherit; font-size: 13px; padding: 4px 8px; border: 1px solid var(--grid-month); border-radius: 4px; background: var(--card); color: var(--text); }
+.theme-btn { margin-left: auto; border: 1px solid var(--grid-month); background: var(--card); color: var(--text-2); border-radius: 4px; padding: 4px 10px; font-size: 13px; cursor: pointer; }
+.theme-btn:hover { background: var(--hover); }
+table { width: 100%; border-collapse: collapse; min-width: 1060px; }
+th { background: var(--navy); color: #fff; padding: 10px; text-align: left; font-size: 13px; }
+td { padding: 7px 10px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+.task-name { width: 300px; font-weight: 500; color: var(--text); }
+.owner { width: 100px; color: var(--text-2); white-space: nowrap; }
+.dur { width: 70px; color: var(--text-2); text-align: center; }
+.timeline { position: relative; height: 28px; }
+.phase-row td { background: var(--phase-row); font-weight: bold; color: var(--text); font-size: 13px; padding: 6px 10px; border-top: 2px solid var(--grid-month); }
+.phase-chip { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 8px; vertical-align: -1px; }
+.bar { position: absolute; height: 20px; border-radius: 4px; top: 4px; font-size: 11px; line-height: 20px; padding: 0 7px; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+.bar-outside { position: absolute; height: 20px; top: 4px; font-size: 11px; line-height: 20px; color: var(--text-3); white-space: nowrap; }
+.p0 { background: var(--c0); } .p1 { background: var(--c1); } .p2 { background: var(--c2); } .p3 { background: var(--c3); } .p4 { background: var(--c4); }
+:root:not([data-theme="dark"]) .p0 { color: #fff; } :root:not([data-theme="dark"]) .p1, :root:not([data-theme="dark"]) .p2, :root:not([data-theme="dark"]) .p3, :root:not([data-theme="dark"]) .p4 { color: #1a2b4c; }
+:root[data-theme="dark"] .p0, :root[data-theme="dark"] .p1, :root[data-theme="dark"] .p2, :root[data-theme="dark"] .p3, :root[data-theme="dark"] .p4 { color: #101010; }
+@media (prefers-color-scheme: dark) { :root:where(:not([data-theme="light"])) .p0, :root:where(:not([data-theme="light"])) .p1, :root:where(:not([data-theme="light"])) .p2, :root:where(:not([data-theme="light"])) .p3, :root:where(:not([data-theme="light"])) .p4 { color: #101010; } }
+tr.dim td { opacity: 0.22; }
+tr[data-name] td { transition: opacity 0.15s; }
+tr[data-name] { cursor: default; }
+.weekend { position: absolute; top: 0; bottom: 0; background: var(--weekend); }
+.grid-week { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--grid-week); }
+.grid-month { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--grid-month); }
+.today-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--today); z-index: 2; }
+.today-tag { position: absolute; top: -4px; font-size: 10px; color: #fff; background: var(--today); padding: 1px 5px; border-radius: 3px; white-space: nowrap; transform: translateX(-50%); z-index: 3; }
+.milestone-dot { position: absolute; top: 8px; width: 14px; height: 14px; transform: translate(-50%, 0) rotate(45deg); background: var(--navy); border-radius: 2px; cursor: pointer; }
+tr.ms-row td { cursor: pointer; }
+.milestone-label { position: absolute; top: 5px; font-size: 11px; font-weight: 600; white-space: nowrap; color: var(--text); }
+.axis-cell { position: relative; height: 34px; }
+.axis-month { position: absolute; top: 0; font-size: 12px; font-weight: 600; transform: translateX(-50%); }
+.axis-week { position: absolute; top: 18px; font-size: 10px; color: var(--text-3); transform: translateX(-50%); }
+tr:hover td { background: var(--hover); }
+tr:hover td.timeline-cell { background: var(--hover-tl); }
+.legend { margin-top: 15px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); background: none; border: 1px solid transparent; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-family: inherit; }
+.legend-item:hover { border-color: var(--grid-month); }
+.legend-item.off { opacity: 0.35; text-decoration: line-through; }
+.legend-color { width: 16px; height: 16px; border-radius: 3px; }
+.legend-diamond { width: 12px; height: 12px; background: var(--navy); transform: rotate(45deg); border-radius: 2px; }
+.section { background: var(--card); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 20px; margin-top: 20px; overflow-x: auto; }
+.section h2 { font-size: 16px; margin: 0 0 12px 0; border-left: 4px solid var(--c0); padding-left: 10px; }
+.ms-table, .risk-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
+.ms-table th, .risk-table th { background: var(--navy); color: #fff; padding: 8px 12px; text-align: left; font-weight: 500; }
+.ms-table td, .risk-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.ms-table tr.flash td { background: #fdf3d0; }
+@media (prefers-color-scheme: dark) { .ms-table tr.flash td { background: #3a3320; } :root[data-theme="light"] .ms-table tr.flash td { background: #fdf3d0; } }
+:root[data-theme="dark"] .ms-table tr.flash td { background: #3a3320; }
+.note { margin-top: 20px; padding: 12px 15px; background: var(--note-bg); border-left: 4px solid var(--note-border); border-radius: 4px; font-size: 13px; color: var(--note-text); line-height: 1.8; }
+.note strong { color: var(--note-strong); }
+.footer { text-align: center; color: var(--text-3); font-size: 12px; margin-top: 15px; }
+#tooltip { position: fixed; z-index: 99; background: var(--navy); color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 12px; line-height: 1.7; pointer-events: none; box-shadow: 0 3px 10px rgba(0,0,0,0.25); display: none; max-width: 320px; }
+#tooltip .tt-title { font-weight: bold; font-size: 13px; margin-bottom: 2px; }
+#tooltip .tt-row { color: #d7dfea; }
+</style>
+</head>
+<body>
+    <h1>机房3D可视化实例项目甘特图</h1>
+    <div class="subtitle">周期：2026年10月9日（节后）～ 12月11日，共9周 ｜ 团队：项目经理 + 1开发 + 3新工 ｜ 技术路线：Three.js / Web ｜ 24项任务 · 5个里程碑</div>
+
+    <div class="gantt-wrapper">
+        <div class="toolbar">
+            <label for="owner-filter">人员筛选：</label>
+            <select id="owner-filter">
+                <option value="">全部人员</option>
+                <option value="项目经理">项目经理</option>
+                <option value="开发">开发</option>
+                <option value="新工A">新工A</option>
+                <option value="新工B">新工B</option>
+                <option value="新工C">新工C</option>
+            </select>
+            <button class="theme-btn" id="theme-btn" type="button">🌙 / ☀️</button>
+        </div>
+        <table id="gantt-table">
+            <thead>
+                <tr>
+                    <th style="width:300px">任务名称</th>
+                    <th style="width:100px">负责人</th>
+                    <th style="width:70px">工期</th>
+                    <th style="width:560px"><div class="axis-cell" id="axis"></div></th>
+                </tr>
+            </thead>
+            <tbody id="gantt-body"></tbody>
+        </table>
+        <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="section">
+        <h2>里程碑与验收标准</h2>
+        <table class="ms-table" id="ms-table">
+            <thead><tr><th style="width:70px">编号</th><th style="width:110px">日期</th><th>交付物与验收标准</th></tr></thead>
+            <tbody>
+                <tr id="ms-M1"><td><strong>M1</strong></td><td>10月16日</td><td>机房平面图、机柜布局图、设备台账收集到位；Three.js示例场景渲染跑通（Hello World级）</td></tr>
+                <tr id="ms-M2"><td><strong>M2</strong></td><td>10月30日</td><td>机房全场景静态渲染完成，截图可看清机房全貌、机柜列布局与主要设备</td></tr>
+                <tr id="ms-M3"><td><strong>M3</strong></td><td>11月13日</td><td>可交互Demo：点击设备弹出信息卡、键盘漫游、预设机位切换全部可用</td></tr>
+                <tr id="ms-M4"><td><strong>M4</strong></td><td>11月27日</td><td>测试用例全部走查通过，遗留Bug列入降级清单并经项目经理确认</td></tr>
+                <tr id="ms-M5"><td><strong>M5</strong></td><td>12月11日</td><td>完成内部验收汇报，演示材料与项目文档归档</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>风险与对策</h2>
+        <table class="risk-table">
+            <thead><tr><th style="width:180px">风险</th><th style="width:90px">影响阶段</th><th>对策</th></tr></thead>
+            <tbody>
+                <tr><td>只有1名开发，核心代码单点</td><td>全程，W2-W3/W6-W7为负载高峰</td><td>里程碑中期检查（M2/M3节点）提前暴露问题；任务排布已避免重度双线并行</td></tr>
+                <tr><td>新工零基础，产出质量不稳定</td><td>W1-W3</td><td>所有新工任务配套产出模板（台账模板、Bug记录表、素材命名规范），周一晨会15分钟对齐</td></tr>
+                <tr><td>机房现场进出需审批</td><td>W1</td><td>10月9日启动当天即提交门禁申请，拍照任务（10/12开始）预留审批时间</td></tr>
+                <tr><td>免费3D模型版权不清</td><td>W2-W3</td><td>只用CC0或明确授权模型，新工A整理时登记来源清单，项目经理抽查</td></tr>
+                <tr><td>范围蔓延（临时加需求）</td><td>全程</td><td>本期明确不做真实数据对接（告警/温湿度均为模拟状态展示），新增需求一律进二期清单</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="note">
+        <strong>使用说明：</strong>灰色竖带为周末；深蓝菱形为里程碑（<strong>点击菱形可跳转验收标准</strong>）；红色竖线为今天。<strong>点图例可按阶段筛选</strong>，下拉可按人员筛选，悬停任务条看详情。修改计划：编辑文件内 <strong>TASKS / MILESTONES</strong> 数组（日期格式 2026-10-09）后刷新或提交，条形自动重算。Excel跟单版（机房3D可视化实例项目计划.xlsx）每周更新"状态/完成百分比"两列即可。
+    </div>
+    <div class="footer">生成日期：2026年9月28日 ｜ 机房3D可视化实例项目</div>
+    <div id="tooltip"></div>
+
+<script>
+// ====== 可编辑数据区：改日期/任务后刷新浏览器即可 ======
+const PHASES = [
+    { id: 0, name: "阶段0 · 启动与资料", color: "var(--c0)", range: "10/9 - 10/16" },
+    { id: 1, name: "阶段1 · 场景建模",   color: "var(--c1)", range: "10/19 - 10/30" },
+    { id: 2, name: "阶段2 · 交互开发",   color: "var(--c2)", range: "11/2 - 11/13" },
+    { id: 3, name: "阶段3 · 优化与测试", color: "var(--c3)", range: "11/16 - 11/27" },
+    { id: 4, name: "阶段4 · 演示与验收", color: "var(--c4)", range: "11/30 - 12/11" },
+];
+
+const TASKS = [
+    { phase: 0, name: "项目启动会与任务分工",                             owner: "项目经理", start: "2026-10-09", end: "2026-10-09" },
+    { phase: 0, name: "机房资料收集（平面图/布局图/设备台账）",           owner: "新工A",   start: "2026-10-09", end: "2026-10-15" },
+    { phase: 0, name: "现场照片与尺寸采集（机柜/走线/空调/消防）",       owner: "新工B",   start: "2026-10-12", end: "2026-10-16" },
+    { phase: 0, name: "Three.js开发环境搭建与技术验证",                   owner: "开发",    start: "2026-10-09", end: "2026-10-16" },
+    { phase: 1, name: "机房主体结构建模（地面/墙体/吊顶/通道）",          owner: "开发",    start: "2026-10-19", end: "2026-10-23" },
+    { phase: 1, name: "机柜与设备建模（标准机柜+典型设备glTF）",          owner: "开发",    start: "2026-10-21", end: "2026-10-30" },
+    { phase: 1, name: "免费模型库搜集与贴图素材整理（登记来源）",         owner: "新工A",   start: "2026-10-19", end: "2026-10-28" },
+    { phase: 1, name: "设备照片归类命名与建模参考包",                     owner: "新工B",   start: "2026-10-19", end: "2026-10-26" },
+    { phase: 1, name: "设备台账数据表编制（机房-列-机柜-U位）",           owner: "新工C",   start: "2026-10-19", end: "2026-10-30" },
+    { phase: 2, name: "场景数据驱动（台账→JSON配置加载）",                owner: "开发",    start: "2026-11-02", end: "2026-11-05" },
+    { phase: 2, name: "点击拾取与设备信息卡",                             owner: "开发",    start: "2026-11-04", end: "2026-11-11" },
+    { phase: 2, name: "视角控制（预设机位+键盘漫游）",                     owner: "开发",    start: "2026-11-10", end: "2026-11-13" },
+    { phase: 2, name: "信息卡文案与演示数据整理",                         owner: "新工A/B", start: "2026-11-02", end: "2026-11-10" },
+    { phase: 2, name: "台账数据核对与更新",                               owner: "新工C",   start: "2026-11-02", end: "2026-11-13" },
+    { phase: 3, name: "灯光与告警状态视觉效果",                           owner: "开发",    start: "2026-11-16", end: "2026-11-19" },
+    { phase: 3, name: "性能优化（模型减面/贴图压缩/帧率）",               owner: "开发",    start: "2026-11-19", end: "2026-11-25" },
+    { phase: 3, name: "测试用例编写",                                     owner: "PM+新工C", start: "2026-11-16", end: "2026-11-18" },
+    { phase: 3, name: "功能走查与Bug清单（3新工轮测）",                   owner: "新工A/B/C", start: "2026-11-18", end: "2026-11-25" },
+    { phase: 3, name: "Bug修复与回归",                                    owner: "开发",    start: "2026-11-24", end: "2026-11-27" },
+    { phase: 4, name: "演示脚本与讲解词",                                 owner: "PM+新工C", start: "2026-11-30", end: "2026-12-04" },
+    { phase: 4, name: "录屏与截图素材制作",                               owner: "新工A",   start: "2026-12-02", end: "2026-12-08" },
+    { phase: 4, name: "汇报PPT与材料制作",                                owner: "项目经理", start: "2026-12-04", end: "2026-12-09" },
+    { phase: 4, name: "内部验收演示与问题收尾",                           owner: "全员",    start: "2026-12-09", end: "2026-12-10" },
+    { phase: 4, name: "文档归档与项目总结",                               owner: "项目经理", start: "2026-12-10", end: "2026-12-11" },
+];
+
+const MILESTONES = [
+    { phase: 0, tag: "M1", name: "资料齐备+技术跑通",     date: "2026-10-16" },
+    { phase: 1, tag: "M2", name: "静态场景成型",           date: "2026-10-30" },
+    { phase: 2, tag: "M3", name: "可交互Demo",             date: "2026-11-13" },
+    { phase: 3, tag: "M4", name: "测试通过",               date: "2026-11-27" },
+    { phase: 4, tag: "M5", name: "验收汇报完成",           date: "2026-12-11" },
+];
+// ====== 数据区结束 ======
+
+const DAY = 86400000;
+const d = s => new Date(s + "T00:00:00");
+const RANGE_START = d("2026-10-09");
+const RANGE_END = d("2026-12-11");
+const TOTAL_DAYS = Math.round((RANGE_END - RANGE_START) / DAY) + 1;
+const pct = dt => (Math.round((d(dt) - RANGE_START) / DAY) + 1) / TOTAL_DAYS * 100;
+
+function workDays(s, e) {
+    let n = 0, cur = d(s);
+    while (cur <= d(e)) { const w = cur.getDay(); if (w !== 0 && w !== 6) n++; cur = new Date(cur.getTime() + DAY); }
+    return n;
+}
+const md = dt => (dt.getMonth() + 1) + "/" + dt.getDate();
+
+// 周末条、周网格、月分界（生成一次，每行复用）
+let stripes = "";
+for (let i = 0; i < TOTAL_DAYS; i++) {
+    const cur = new Date(RANGE_START.getTime() + i * DAY);
+    const left = (i + 1) / TOTAL_DAYS * 100;
+    const w = cur.getDay();
+    if (w === 0 || w === 6) stripes += `<div class="weekend" style="left:${left - 100 / TOTAL_DAYS}%;width:${100 / TOTAL_DAYS}%"></div>`;
+    if (w === 1) stripes += `<div class="grid-week" style="left:${left - 100 / TOTAL_DAYS / 2}%"></div>`;
+    if (cur.getDate() === 1) stripes += `<div class="grid-month" style="left:${left - 100 / TOTAL_DAYS}%"></div>`;
+}
+
+// 今日线（区间外自动贴边并显示倒计时/结束语）
+const now = new Date(); const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+let todayHTML = "";
+if (today0 < RANGE_START) {
+    const dd = Math.round((RANGE_START - today0) / DAY);
+    todayHTML = `<div class="today-line" style="left:0.3%"></div><div class="today-tag" style="left:6%">今天 ${md(today0)} · ${dd}天后启动</div>`;
+} else if (today0 > RANGE_END) {
+    todayHTML = `<div class="today-line" style="left:99.7%"></div><div class="today-tag" style="left:94%">今天 ${md(today0)} · 项目已结束</div>`;
+} else {
+    const left = Math.min(Math.max(pct(today0.toISOString().slice(0, 10)), 3), 97);
+    todayHTML = `<div class="today-line" style="left:${left}%"></div><div class="today-tag" style="left:${left}%">今天 ${md(today0)}</div>`;
+}
+stripes += todayHTML;
+
+// 时间轴表头：月份 + 每周一日期刻度 + 今日线
+let axis = '<div class="axis-month" style="left:' + (pct("2026-10-24") - 1.5) + '%;color:var(--text)">10月</div>' +
+           '<div class="axis-month" style="left:' + (pct("2026-11-15") - 1.5) + '%;color:var(--text)">11月</div>' +
+           '<div class="axis-month" style="left:' + (pct("2026-12-06") - 1.5) + '%;color:var(--text)">12月</div>';
+for (let i = 0; i < TOTAL_DAYS; i++) {
+    const cur = new Date(RANGE_START.getTime() + i * DAY);
+    if (cur.getDay() === 1) {
+        const left = (i + 1) / TOTAL_DAYS * 100 - 100 / TOTAL_DAYS / 2;
+        axis += `<div class="axis-week" style="left:${left}%">${md(cur)}</div>`;
+    }
+}
+document.getElementById("axis").innerHTML = axis;
+
+// 甘特主体
+const body = document.getElementById("gantt-body");
+let html = "", lastPhase = -1;
+const all = [...TASKS.map(t => ({ ...t, kind: "task" })), ...MILESTONES.map(m => ({ ...m, kind: "ms" }))]
+    .sort((a, b) => (a.start || a.date).localeCompare(b.start || b.date) || a.phase - b.phase);
+
+for (const item of all) {
+    if (item.phase !== lastPhase) {
+        const p = PHASES[item.phase];
+        html += `<tr class="phase-row" data-phase="${item.phase}"><td colspan="4"><span class="phase-chip" style="background:${p.color}"></span>${p.name}<span style="color:var(--text-3);font-weight:normal;margin-left:10px">${p.range}</span></td></tr>`;
+        lastPhase = item.phase;
+    }
+    if (item.kind === "ms") {
+        const left = pct(item.date);
+        const labelStyle = left > 80 ? `left:auto;right:${100 - left + 1.5}%` : `left:${left + 1.5}%`;
+        html += `<tr class="ms-row" data-phase="${item.phase}" data-ms="${item.tag}" title="点击查看验收标准"><td class="task-name" style="font-weight:600">${item.tag} ${item.name}</td><td class="owner">里程碑</td><td class="dur">—</td>
+            <td class="timeline-cell"><div class="timeline">${stripes}<div class="milestone-dot" style="left:${left}%"></div><div class="milestone-label" style="${labelStyle}">${item.tag} · ${md(d(item.date))}</div></div></td></tr>`;
+    } else {
+        const l = pct(item.start) - 100 / TOTAL_DAYS, w = pct(item.end) - pct(item.start) + 100 / TOTAL_DAYS;
+        const label = md(d(item.start)) + "-" + md(d(item.end));
+        const days = workDays(item.start, item.end);
+        const bar = w >= 10
+            ? `<div class="bar p${item.phase}" style="left:${l}%;width:${w}%">${label}</div>`
+            : `<div class="bar p${item.phase}" style="left:${l}%;width:${Math.max(w, 1.2)}%;height:14px;top:7px"></div><div class="bar-outside" style="left:${l + w + 0.6}%">${label}</div>`;
+        html += `<tr data-phase="${item.phase}" data-name="${item.name}" data-owner="${item.owner}" data-start="${item.start}" data-end="${item.end}" data-dur="${days}" data-phase-name="${PHASES[item.phase].name}"><td class="task-name">${item.name}</td><td class="owner">${item.owner}</td><td class="dur">${days}天</td>
+            <td class="timeline-cell"><div class="timeline">${stripes}${bar}</div></td></tr>`;
+    }
+}
+body.innerHTML = html;
+
+// 图例（可点击筛选阶段）
+const legend = document.getElementById("legend");
+const activePhases = new Set(PHASES.map(p => p.id));
+legend.innerHTML = PHASES.map(p => `<button class="legend-item" type="button" data-phase="${p.id}"><span class="legend-color" style="background:${p.color}"></span>${p.name.split("·")[1]}</button>`).join("") +
+    `<span class="legend-item" style="cursor:default"><span class="legend-diamond"></span>里程碑</span>`;
+legend.querySelectorAll("button.legend-item").forEach(btn => {
+    btn.addEventListener("click", () => {
+        const id = +btn.dataset.phase;
+        if (activePhases.has(id)) { if (activePhases.size > 1) activePhases.delete(id); } else activePhases.add(id);
+        btn.classList.toggle("off", !activePhases.has(id));
+        document.querySelectorAll("#gantt-body tr[data-phase]").forEach(tr => {
+            tr.style.display = activePhases.has(+tr.dataset.phase) ? "" : "none";
+        });
+    });
+});
+
+// 人员筛选（组合负责人按包含关系匹配；PM=项目经理）
+const PERSON_ALIASES = { "项目经理": ["项目经理", "PM", "全员"], "开发": ["开发", "全员"], "新工A": ["新工A", "全员"], "新工B": ["新工B", "全员"], "新工C": ["新工C", "全员"] };
+document.getElementById("owner-filter").addEventListener("change", e => {
+    const person = e.target.value;
+    const aliases = person ? PERSON_ALIASES[person] : null;
+    const phaseHasMatch = new Set();
+    document.querySelectorAll("#gantt-body tr[data-name]").forEach(tr => {
+        const match = !aliases || aliases.some(a => tr.dataset.owner.includes(a));
+        tr.classList.toggle("dim", !match);
+        if (match) phaseHasMatch.add(tr.dataset.phase);
+    });
+    document.querySelectorAll("#gantt-body tr.ms-row").forEach(tr => tr.classList.toggle("dim", !!person && !phaseHasMatch.has(tr.dataset.phase)));
+    document.querySelectorAll("#gantt-body tr.phase-row").forEach(tr => tr.classList.toggle("dim", !!person && !phaseHasMatch.has(tr.dataset.phase)));
+});
+
+// 里程碑点击 → 滚动高亮验收标准行
+document.querySelectorAll("tr.ms-row").forEach(tr => {
+    tr.addEventListener("click", () => {
+        const target = document.getElementById("ms-" + tr.dataset.ms);
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.classList.remove("flash"); void target.offsetWidth; target.classList.add("flash");
+        setTimeout(() => target.classList.remove("flash"), 1800);
+    });
+});
+
+// 悬停提示
+const tip = document.getElementById("tooltip");
+document.getElementById("gantt-body").addEventListener("mouseover", e => {
+    const tr = e.target.closest("tr[data-name]");
+    if (!tr) { tip.style.display = "none"; return; }
+    tip.innerHTML = `<div class="tt-title">${tr.dataset.name}</div>` +
+        `<div class="tt-row">负责人：${tr.dataset.owner} ｜ ${tr.dataset.phaseName}</div>` +
+        `<div class="tt-row">${tr.dataset.start.replace(/-/g, "/")} ~ ${tr.dataset.end.replace(/-/g, "/")}（${tr.dataset.dur}个工作日）</div>`;
+    tip.style.display = "block";
+});
+document.getElementById("gantt-body").addEventListener("mousemove", e => {
+    if (tip.style.display !== "block") return;
+    const x = Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 8);
+    const y = Math.min(e.clientY + 16, window.innerHeight - tip.offsetHeight - 8);
+    tip.style.left = x + "px"; tip.style.top = y + "px";
+});
+document.getElementById("gantt-body").addEventListener("mouseleave", () => tip.style.display = "none");
+
+// 主题切换（跟随系统 + 手动覆盖）
+const themeBtn = document.getElementById("theme-btn");
+const saved = localStorage.getItem("gantt-theme");
+if (saved) document.documentElement.dataset.theme = saved;
+themeBtn.addEventListener("click", () => {
+    const cur = document.documentElement.dataset.theme;
+    const sysDark = matchMedia("(prefers-color-scheme: dark)").matches;
+    const next = (cur === "dark" || (!cur && sysDark)) ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem("gantt-theme", next);
+});
+</script>
+</body>
+</html>
